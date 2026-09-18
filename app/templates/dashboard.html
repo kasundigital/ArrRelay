@@ -1,0 +1,17 @@
+{% extends 'base.html' %}{% block content %}<h1>Dashboard</h1><p class="muted">Request activity and live library information from Radarr and Sonarr.</p>
+{% if errors %}<div class="alert">{{ errors|join(' · ') }}</div>{% endif %}
+<div class="grid section">
+<div class="card"><div class="muted">Total Requests</div><div class="big">{{ req.total or 0 }}</div></div>
+<div class="card"><div class="muted">Movie Requests</div><div class="big">{{ req.movies or 0 }}</div></div>
+<div class="card"><div class="muted">Series Requests</div><div class="big">{{ req.series or 0 }}</div></div>
+<div class="card"><div class="muted">Needs Review</div><div class="big">{{ req.review or 0 }}</div></div>
+<div class="card"><div class="muted">Added</div><div class="big">{{ req.added or 0 }}</div></div>
+<div class="card"><div class="muted">Failed</div><div class="big">{{ req.failed or 0 }}</div></div>
+</div>
+<h2>Library</h2><div class="grid section">
+<div class="card"><div class="muted">Radarr Movies</div><div class="big">{{ rad.total }}</div><small>{{ rad.downloaded }} downloaded</small></div>
+<div class="card"><div class="muted">Sonarr Series</div><div class="big">{{ son.series_total }}</div><small>{{ son.episodes_downloaded }} / {{ son.episodes_total }} episodes downloaded</small></div>
+<div class="card"><div class="muted">Discord Listener</div><div class="big">{{ 'Online' if runtime.running else 'Stopped' }}</div><small>{{ runtime.error or 'Background listener status' }}</small></div>
+</div>
+<h2>Recent Requests</h2><div class="card"><div style="overflow:auto"><table><thead><tr><th>ID</th><th>Type</th><th>Title</th><th>Year</th><th>Status</th><th>Created</th></tr></thead><tbody>{% for r in recent %}<tr><td>#{{r.id}}</td><td>{{r.media_type or '—'}}</td><td>{{r.title or 'Missing information'}}</td><td>{{r.year or '—'}}</td><td>{{r.status}}</td><td>{{r.created_at}}</td></tr>{% else %}<tr><td colspan="6" class="muted">No requests yet.</td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}
