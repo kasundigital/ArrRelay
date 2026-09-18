@@ -1,1 +1,164 @@
-{% extends 'base.html' %}{% block content %}<div class="login card"><h1>Welcome to ArrRelay</h1><p class="muted">Create the first local administrator account. This account is stored only in ArrRelay's SQLite database.</p>{% if error %}<div class="alert">{{ error }}</div>{% endif %}<form method="post"><div class="field"><label>Admin username</label><input name="username" required autofocus></div><div class="field"><label>Password</label><input name="password" type="password" minlength="8" required></div><div class="field"><label>Confirm password</label><input name="confirm" type="password" minlength="8" required></div><button>Create Admin</button></form></div>{% endblock %}
+{% extends 'base.html' %}
+{% block content %}
+<div class="wizard-shell">
+  <div class="wizard-head">
+    <div>
+      <div class="eyebrow">FIRST-RUN WIZARD</div>
+      <h1>Set up ArrRelay</h1>
+      <p class="muted">Everything ArrRelay needs can be configured here. No API tokens need to be placed in your Docker command.</p>
+    </div>
+    <a class="help-link" href="https://github.com/kasundigital/ArrRelay/blob/main/docs/FIRST-RUN-SETUP.md" target="_blank" rel="noopener">❓ Setup Help</a>
+  </div>
+
+  {% if errors %}
+  <div class="alert">
+    <strong>Please fix these items:</strong>
+    <ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+
+  <div class="wizard-progress">
+    <div class="step-dot active" data-dot="0">1<span>Admin</span></div>
+    <div class="step-dot" data-dot="1">2<span>Discord</span></div>
+    <div class="step-dot" data-dot="2">3<span>Telegram</span></div>
+    <div class="step-dot" data-dot="3">4<span>Radarr</span></div>
+    <div class="step-dot" data-dot="4">5<span>Sonarr</span></div>
+    <div class="step-dot" data-dot="5">6<span>Finish</span></div>
+  </div>
+
+  <form method="post" id="setupForm">
+    <section class="wizard-step active" data-step="0">
+      <div class="card">
+        <h2>🔐 Create the administrator</h2>
+        <p class="muted">This account protects the ArrRelay dashboard and settings.</p>
+        <div class="field"><label>Admin username</label><input name="username" value="{{ form.get('username','') if form else '' }}" required autofocus></div>
+        <div class="row">
+          <div class="field"><label>Password</label><input name="password" type="password" minlength="8" required></div>
+          <div class="field"><label>Confirm password</label><input name="confirm" type="password" minlength="8" required></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wizard-step" data-step="1">
+      <div class="card">
+        <h2>💬 Discord</h2>
+        <p class="muted">ArrRelay watches the request channels you specify.</p>
+        <div class="field"><label>Discord Bot Token</label><input name="discord_token" type="password" value="{{ form.get('discord_token','') if form else '' }}" required></div>
+        <div class="row">
+          <div class="field"><label>Server / Guild ID</label><input name="discord_guild_id" value="{{ form.get('discord_guild_id','') if form else '' }}" required></div>
+          <div class="field"><label>Request Channel ID(s)</label><input name="discord_channel_ids" value="{{ form.get('discord_channel_ids','') if form else '' }}" placeholder="1234567890,9876543210" required><small class="muted">Separate multiple channel IDs with commas.</small></div>
+        </div>
+        <div class="field"><label>When request information is missing</label>
+          <select name="discord_reply_mode">
+            <option value="dm" {% if not form or form.get('discord_reply_mode','dm') == 'dm' %}selected{% endif %}>DM requester privately</option>
+            <option value="reply" {% if form and form.get('discord_reply_mode') == 'reply' %}selected{% endif %}>Reply in channel and auto-delete</option>
+          </select>
+        </div>
+        <p class="tip">💡 Need the token, Server ID or Channel ID? <a href="https://github.com/kasundigital/ArrRelay/blob/main/docs/FIRST-RUN-SETUP.md#discord" target="_blank">Open the Discord guide</a>.</p>
+      </div>
+    </section>
+
+    <section class="wizard-step" data-step="2">
+      <div class="card">
+        <h2>📲 Telegram Admin Review</h2>
+        <p class="muted">Telegram is used privately when ArrRelay needs you to choose the correct movie/series or reports an error.</p>
+        <div class="row">
+          <div class="field"><label>Telegram Bot Token</label><input name="telegram_bot_token" type="password" value="{{ form.get('telegram_bot_token','') if form else '' }}" required></div>
+          <div class="field"><label>Your Telegram Chat ID</label><input name="telegram_admin_chat_id" value="{{ form.get('telegram_admin_chat_id','') if form else '' }}" required></div>
+        </div>
+        <p class="tip">💡 Don't know the Chat ID? <a href="https://github.com/kasundigital/ArrRelay/blob/main/docs/FIRST-RUN-SETUP.md#telegram" target="_blank">Follow the Telegram guide</a>.</p>
+      </div>
+    </section>
+
+    <section class="wizard-step" data-step="3">
+      <div class="card">
+        <h2>🎬 Radarr</h2>
+        <div class="field"><label>Radarr URL</label><input name="radarr_url" value="{{ form.get('radarr_url', defaults.radarr_url) if form else defaults.radarr_url }}" placeholder="http://radarr:7878" required></div>
+        <div class="field"><label>Radarr API Key</label><input name="radarr_api_key" type="password" value="{{ form.get('radarr_api_key','') if form else '' }}" required></div>
+        <div class="row">
+          <div class="field"><label>Root Folder</label><input name="radarr_root_folder" value="{{ form.get('radarr_root_folder', defaults.radarr_root_folder) if form else defaults.radarr_root_folder }}" required></div>
+          <div class="field"><label>Quality Profile ID</label><input name="radarr_quality_profile_id" type="number" min="1" value="{{ form.get('radarr_quality_profile_id', defaults.radarr_quality_profile_id) if form else defaults.radarr_quality_profile_id }}" required></div>
+        </div>
+        <p class="tip">💡 <a href="https://github.com/kasundigital/ArrRelay/blob/main/docs/FIRST-RUN-SETUP.md#radarr" target="_blank">How to find the Radarr API key, root folder and profile ID</a>.</p>
+      </div>
+    </section>
+
+    <section class="wizard-step" data-step="4">
+      <div class="card">
+        <h2>📺 Sonarr</h2>
+        <div class="field"><label>Sonarr URL</label><input name="sonarr_url" value="{{ form.get('sonarr_url', defaults.sonarr_url) if form else defaults.sonarr_url }}" placeholder="http://sonarr:8989" required></div>
+        <div class="field"><label>Sonarr API Key</label><input name="sonarr_api_key" type="password" value="{{ form.get('sonarr_api_key','') if form else '' }}" required></div>
+        <div class="row">
+          <div class="field"><label>Root Folder</label><input name="sonarr_root_folder" value="{{ form.get('sonarr_root_folder', defaults.sonarr_root_folder) if form else defaults.sonarr_root_folder }}" required></div>
+          <div class="field"><label>Quality Profile ID</label><input name="sonarr_quality_profile_id" type="number" min="1" value="{{ form.get('sonarr_quality_profile_id', defaults.sonarr_quality_profile_id) if form else defaults.sonarr_quality_profile_id }}" required></div>
+        </div>
+        <p class="tip">💡 <a href="https://github.com/kasundigital/ArrRelay/blob/main/docs/FIRST-RUN-SETUP.md#sonarr" target="_blank">How to find the Sonarr API key, root folder and profile ID</a>.</p>
+      </div>
+    </section>
+
+    <section class="wizard-step" data-step="5">
+      <div class="card">
+        <h2>✅ Ready to start</h2>
+        <p>ArrRelay will save your configuration in the persistent SQLite database and start Discord + Telegram after you finish.</p>
+        <div class="field"><label>Automatic match confidence</label><input name="auto_approve_confidence" type="number" min="0" max="1" step="0.01" value="{{ form.get('auto_approve_confidence', defaults.auto_approve_confidence) if form else defaults.auto_approve_confidence }}"></div>
+        <label class="checkline"><input name="dry_run" type="checkbox" {% if not form or form.get('dry_run') %}checked{% endif %}> <span><strong>Keep Dry Run enabled</strong><br><small class="muted">Recommended for your first test. ArrRelay will look up requests but will not add/download media.</small></span></label>
+        <div class="tip">📘 Full setup documentation: <a href="https://github.com/kasundigital/ArrRelay/blob/main/docs/FIRST-RUN-SETUP.md" target="_blank">FIRST-RUN-SETUP.md</a></div>
+      </div>
+    </section>
+
+    <div class="wizard-actions">
+      <button type="button" class="secondary" id="backBtn" style="display:none">← Back</button>
+      <button type="button" id="nextBtn">Next →</button>
+      <button type="submit" id="finishBtn" style="display:none">🚀 Finish Setup</button>
+    </div>
+  </form>
+</div>
+
+<script>
+(() => {
+  const steps = [...document.querySelectorAll('.wizard-step')];
+  const dots = [...document.querySelectorAll('.step-dot')];
+  const back = document.getElementById('backBtn');
+  const next = document.getElementById('nextBtn');
+  const finish = document.getElementById('finishBtn');
+  let index = 0;
+
+  function show(i) {
+    index = i;
+    steps.forEach((el, n) => el.classList.toggle('active', n === i));
+    dots.forEach((el, n) => {
+      el.classList.toggle('active', n === i);
+      el.classList.toggle('done', n < i);
+    });
+    back.style.display = i === 0 ? 'none' : '';
+    next.style.display = i === steps.length - 1 ? 'none' : '';
+    finish.style.display = i === steps.length - 1 ? '' : 'none';
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+
+  function currentValid() {
+    const fields = [...steps[index].querySelectorAll('input[required], select[required]')];
+    for (const field of fields) {
+      if (!field.reportValidity()) return false;
+    }
+    if (index === 0) {
+      const p = document.querySelector('input[name="password"]');
+      const c = document.querySelector('input[name="confirm"]');
+      if (p.value !== c.value) {
+        c.setCustomValidity('Passwords do not match');
+        c.reportValidity();
+        c.setCustomValidity('');
+        return false;
+      }
+    }
+    return true;
+  }
+
+  next.addEventListener('click', () => {
+    if (currentValid()) show(Math.min(index + 1, steps.length - 1));
+  });
+  back.addEventListener('click', () => show(Math.max(index - 1, 0)));
+  show(0);
+})();
+</script>
+{% endblock %}
