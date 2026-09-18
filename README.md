@@ -17,6 +17,12 @@
 
 [Features](#-features) • [How it works](#-how-it-works) • [Install](#-docker-quick-start) • [Configuration](#-first-run-setup) • [Support](#-support-arrrelay)
 
+<br>
+
+<a href="https://buymeacoffee.com/kasundigital" target="_blank">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" height="46">
+</a>
+
 </div>
 
 ---
@@ -403,7 +409,15 @@ ArrRelay is **free and open source**.
 
 If ArrRelay saves you time or you would like to support continued development:
 
-### [☕ Buy Me a Coffee — Kasun Digital](https://buymeacoffee.com/kasundigital)
+<div align="center">
+
+<a href="https://buymeacoffee.com/kasundigital" target="_blank">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" height="55">
+</a>
+
+**Support free and open-source development of ArrRelay.**
+
+</div>
 
 The same support option is available from the ArrRelay admin interface.
 
