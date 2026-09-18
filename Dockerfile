@@ -12,4 +12,8 @@ COPY app ./app
 
 RUN mkdir -p /data
 
+EXPOSE 3032
+
+VOLUME ["/data"]
+
 CMD ["python", "-m", "app.main"]
