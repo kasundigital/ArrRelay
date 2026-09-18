@@ -197,80 +197,120 @@ It currently shows:
 
 ## 🐳 Docker quick start
 
-### 1. Clone ArrRelay
+ArrRelay is designed so **Discord, Telegram, Radarr and Sonarr credentials are entered in the browser wizard — not in the Docker command**.
+
+### Option A — Docker Run
+
+```bash
+mkdir -p /opt/arrrelay/data
+
+docker run -d \
+  --name arrrelay \
+  --restart unless-stopped \
+  -p 3032:3032 \
+  -v /opt/arrrelay/data:/data \
+  ghcr.io/kasundigital/arrrelay:latest
+```
+
+Then open:
+
+```text
+http://YOUR-SERVER-IP:3032
+```
+
+That's it. ArrRelay automatically creates and stores its own persistent application secret under `/data`.
+
+### Option B — Docker Compose
+
+```bash
+mkdir -p /opt/arrrelay && cd /opt/arrrelay
+curl -fsSLO https://raw.githubusercontent.com/kasundigital/ArrRelay/main/docker-compose.yml
+docker compose up -d
+```
+
+Open:
+
+```text
+http://YOUR-SERVER-IP:3032
+```
+
+### Update later
+
+**Docker Compose:**
+
+```bash
+cd /opt/arrrelay
+docker compose pull
+docker compose up -d
+```
+
+**Docker Run:**
+
+```bash
+docker pull ghcr.io/kasundigital/arrrelay:latest
+docker stop arrrelay
+docker rm arrrelay
+```
+
+Then run the same `docker run` command again. Your settings remain in `/opt/arrrelay/data`.
+
+### Build from source
+
+Developers who want to build the current source locally can use:
 
 ```bash
 git clone https://github.com/kasundigital/ArrRelay.git
 cd ArrRelay
-```
-
-### 2. Create your environment file
-
-```bash
-cp .env.example .env
-nano .env
-```
-
-At minimum, change:
-
-```env
-APP_SECRET=replace-with-a-long-random-secret
-```
-
-### 3. Start ArrRelay
-
-```bash
-docker compose up -d --build
-```
-
-### 4. Check the container
-
-```bash
-docker ps
-docker logs -f arrrelay
-```
-
-### 5. Open the web interface
-
-```text
-http://YOUR-SERVER-IP:3032
+docker compose -f docker-compose.build.yml up -d --build
 ```
 
 ---
 
 ## ⚙️ First-run setup
 
-On the first visit, ArrRelay asks you to create the local administrator account.
+The first time you open ArrRelay, a **6-step setup wizard** collects everything the application needs:
 
-Then open **Settings** and configure:
+1. 🔐 **Admin account**
+   - Admin username
+   - Admin password
 
-1. 💬 **Discord**
+2. 💬 **Discord**
    - Bot token
-   - Guild / Server ID
-   - Request channel IDs
-   - Missing-information response mode
+   - Server / Guild ID
+   - Request channel ID(s)
+   - Private-DM or temporary channel-reply mode
 
-2. 📲 **Telegram**
+3. 📲 **Telegram**
    - Bot token
-   - Private admin chat ID
+   - Admin Chat ID
 
-3. 🎬 **Radarr**
+4. 🎬 **Radarr**
    - URL
    - API key
    - Root folder
    - Quality profile ID
 
-4. 📺 **Sonarr**
+5. 📺 **Sonarr**
    - URL
    - API key
    - Root folder
    - Quality profile ID
 
-5. 🧪 **Automation**
-   - Auto-approve confidence
-   - Dry Run mode
+6. 🧪 **Automation**
+   - Match confidence
+   - Dry Run
 
-> **Recommended:** Keep **Dry Run enabled** until Discord, Telegram, Radarr and Sonarr are all confirmed working.
+All integration values are stored in the persistent ArrRelay SQLite database under `/data`.
+
+> **Recommended:** leave **Dry Run enabled** until Discord → ArrRelay → Radarr/Sonarr → Telegram has been tested successfully.
+
+### 📘 Don't know where to get the tokens or IDs?
+
+Use the detailed setup guide:
+
+**[FIRST-RUN-SETUP.md → Discord token, Server ID, Channel ID, Telegram Chat ID, Radarr/Sonarr API keys and more](docs/FIRST-RUN-SETUP.md)**
+
+The same help link is available directly from the ArrRelay wizard and Settings page.
 
 ---
 
