@@ -15,7 +15,7 @@ from .web import create_app
 
 def ensure_app_secret(base):
     """Create a persistent application secret automatically on first run."""
-    if base.app_secret and base.app_secret != "change-me-in-production":
+    if base.app_secret and base.app_secret not in {"change-me-in-production", "replace-with-a-long-random-secret"}:
         return base
 
     secret_path = os.path.join(os.path.dirname(base.database_path) or "/data", ".arrrelay_secret")
