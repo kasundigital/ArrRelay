@@ -1,0 +1,9 @@
+services:
+  arrrelay:
+    build: .
+    container_name: arrrelay
+    restart: unless-stopped
+    ports:
+      - "3032:3032"
+    volumes:
+      - ./data:/data
