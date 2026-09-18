@@ -1,33 +1,116 @@
-# ArrRelay
+<div align="center">
 
-**ArrRelay** is a free, open-source, Docker-first request automation service that listens to selected Discord channels, validates movie/series requests, sends clear requests to Radarr or Sonarr, and forwards ambiguous requests or errors to a private Telegram admin review flow.
+# 🎬 ArrRelay
 
-> Discord is the request inbox. Radarr/Sonarr do the media automation. Telegram is the private review console. ArrRelay ties them together.
+### Discord requests → smart validation → Radarr / Sonarr → private Telegram review
 
-## Features
+**A lightweight, self-hosted media request relay built for Docker.**
 
-- Docker / Docker Compose deployment
-- Private **admin-only web dashboard** on port `3032`
-- First-run administrator setup and password login
-- Browser-based configuration for Discord, Telegram, Radarr and Sonarr
-- Watches only the Discord server/channels you configure
-- Requires **Movie/Series + Title + Year** before automatic processing
-- Missing information can be requested by Discord reply or private DM
-- Movie requests route to Radarr
-- Series requests route to Sonarr
-- High-confidence matches can be added and searched automatically
-- Ambiguous matches go to Telegram with result-selection and Cancel buttons
-- Duplicate detection before adding media
-- SQLite request history that survives Docker restarts
-- Dashboard counters for total requests, movie requests, series requests, reviews, added items and failures
-- Live Radarr library totals and downloaded-movie count
-- Live Sonarr series totals and downloaded/total episode counts
-- Recent-request activity table
-- Dry-run mode enabled by default for safe testing
-- Responsive dark admin UI
-- Built-in **Support ArrRelay** / Buy Me a Coffee button
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![Discord](https://img.shields.io/badge/Discord-Bot-5865F2?logo=discord&logoColor=white)
+![Telegram](https://img.shields.io/badge/Telegram-Review-26A5E4?logo=telegram&logoColor=white)
+![Radarr](https://img.shields.io/badge/Radarr-Supported-fbb03b)
+![Sonarr](https://img.shields.io/badge/Sonarr-Supported-35c5f4)
+![Port](https://img.shields.io/badge/Web_UI-3032-22c55e)
+![Open Source](https://img.shields.io/badge/Open%20Source-Free-brightgreen)
 
-## Request examples
+[Features](#-features) • [How it works](#-how-it-works) • [Install](#-docker-quick-start) • [Configuration](#-first-run-setup) • [Support](#-support-arrrelay)
+
+</div>
+
+---
+
+## ✨ What is ArrRelay?
+
+**ArrRelay** is a free, open-source automation service that watches selected Discord channels for movie and series requests.
+
+It validates each request, routes **movies to Radarr** and **series to Sonarr**, and sends anything uncertain or broken to a **private Telegram admin review flow**.
+
+> 💬 **Discord** is the request inbox.  
+> 🎬 **Radarr / Sonarr** handle media automation.  
+> 📲 **Telegram** is the private review console.  
+> 🔁 **ArrRelay** connects everything together.
+
+---
+
+## 🚀 Features
+
+| Feature | Description |
+|---|---|
+| 🐳 **Docker-first** | Simple Docker / Docker Compose deployment |
+| 🔐 **Admin-only dashboard** | First-run admin setup and protected login |
+| 🌐 **Web UI on port 3032** | Manage integrations and view activity from the browser |
+| 💬 **Discord listener** | Watches only the servers/channels you configure |
+| 🧠 **Request validation** | Requires **Movie/Series + Title + Year** before automatic processing |
+| 🎬 **Radarr integration** | Movie lookup, duplicate detection, add and search |
+| 📺 **Sonarr integration** | Series lookup, duplicate detection, add and search |
+| 📲 **Telegram review** | Ambiguous matches and errors are sent privately to the admin |
+| ✅ **Telegram actions** | Select the correct result or cancel directly from Telegram |
+| 🔁 **Duplicate protection** | Prevents adding media that already exists |
+| 🗃️ **SQLite history** | Request history survives Docker restarts |
+| 📊 **Usage dashboard** | Tracks requests, additions, failures and review activity |
+| 📥 **Library statistics** | Shows Radarr movies and Sonarr episode download totals |
+| 🧪 **Dry Run mode** | Test safely without actually adding or downloading media |
+| 📱 **Responsive UI** | Designed for desktop and mobile |
+| ☕ **Built-in support link** | Optional Buy Me a Coffee button for the project |
+
+---
+
+## 🧭 How it works
+
+```mermaid
+flowchart LR
+    A[💬 Discord Request] --> B{ArrRelay Validation}
+
+    B -->|Missing type / year| C[✉️ Ask Requester]
+    B -->|Movie| D[🎬 Search Radarr]
+    B -->|Series| E[📺 Search Sonarr]
+
+    D --> F{Clear Match?}
+    E --> F
+
+    F -->|Yes| G[✅ Add + Search]
+    F -->|No| H[📲 Telegram Review]
+
+    H --> I[Select Correct Result]
+    H --> J[❌ Cancel]
+
+    I --> G
+    G --> K[📊 Save Request History]
+```
+
+### Request flow
+
+```text
+Discord
+   │
+   ▼
+ArrRelay
+   │
+   ├── Missing information ───────► Ask requester
+   │
+   ├── Movie + clear match ───────► Radarr ► Add + Search
+   │
+   ├── Series + clear match ──────► Sonarr ► Add + Search
+   │
+   └── Ambiguous / error ─────────► Telegram Admin
+                                      │
+                                      ├── Select result
+                                      └── Cancel
+```
+
+---
+
+## 💬 Request format
+
+ArrRelay is deliberately conservative. A request should contain:
+
+- **Type** — Movie or Series
+- **Title**
+- **Year**
+
+### ✅ Good requests
 
 ```text
 Movie: No Time to Die (2021)
@@ -35,134 +118,312 @@ Series: FBI (2018)
 Chicago PD (2014) - Series
 ```
 
-If information is missing, for example:
+### ⚠️ Missing information
 
 ```text
 The Drop
 ```
 
-ArrRelay asks the requester to provide the missing type and/or year instead of guessing and downloading the wrong item.
+ArrRelay will **not guess and download something automatically**.
 
-## How the workflow works
+Instead, it asks the requester for the missing information:
 
 ```text
-Discord message
-      |
-      v
-   ArrRelay
-      |
-      +-- Missing type/year ----------> Ask Discord requester
-      |
-      +-- Movie + clear match --------> Radarr -> Add + Search
-      |
-      +-- Series + clear match -------> Sonarr -> Add + Search
-      |
-      +-- Ambiguous / lookup error ---> Telegram admin review
-                                          |
-                                          +-- Select result
-                                          +-- Cancel
+Please include the type, title and year.
+
+Movie: Title (Year)
+Series: Title (Year)
 ```
 
-## Docker quick start
+---
 
-Clone the repository:
+## 📲 Telegram review
 
-```bash
-git clone https://github.com/kasundigital/ArrRelay.git
-cd ArrRelay
-cp .env.example .env
+When ArrRelay cannot confidently identify the correct item, the request is sent to your private Telegram bot.
+
+Example:
+
+```text
+⚠️ ArrRelay review required
+
+Movie: The Drop (2026)
+Best confidence: 78%
+
+Select the correct result or cancel.
 ```
 
-Change at least `APP_SECRET` in `.env`, then start:
+Telegram buttons allow the administrator to:
 
-```bash
-docker compose up -d --build
-```
+- ✅ Select the correct movie or series
+- ❌ Cancel the request
+- 🚨 Receive lookup/add errors
 
-Open:
+Only the configured **Telegram Admin Chat ID** is authorized to approve requests.
+
+---
+
+## 📊 Admin dashboard
+
+The dashboard is available at:
 
 ```text
 http://YOUR-SERVER-IP:3032
 ```
 
-On the first visit, ArrRelay asks you to create the local administrator account. After login, open **Settings** and configure Discord, Telegram, Radarr and Sonarr.
+It currently shows:
 
-## First-run setup
+| Metric | Purpose |
+|---|---|
+| 📥 Total Requests | All requests ArrRelay has received |
+| 🎬 Movie Requests | Requests routed toward Radarr |
+| 📺 Series Requests | Requests routed toward Sonarr |
+| ⚠️ Needs Review | Requests waiting for manual attention |
+| ✅ Added | Successfully added items |
+| ❌ Failed | Requests that failed |
+| 🎞️ Radarr Movies | Total movies currently in Radarr |
+| 💾 Downloaded Movies | Radarr movies that already have files |
+| 📡 Sonarr Series | Total series currently in Sonarr |
+| 📺 Episodes | Downloaded vs total episodes |
+| 🟢 Discord Listener | Current bot/listener status |
+| 🕘 Recent Requests | Latest request activity |
 
-1. Create the ArrRelay admin account.
-2. Add the Discord bot token, server ID and request-channel IDs.
-3. Choose whether missing-information requests should be a channel reply or private DM.
-4. Add the Telegram bot token and your private admin chat ID.
-5. Add the Radarr URL/API key/root folder/quality profile ID.
-6. Add the Sonarr URL/API key/root folder/quality profile ID.
-7. Leave **Dry Run** enabled for initial testing.
-8. Save settings. ArrRelay restarts the background integrations automatically.
-9. After testing is successful, disable Dry Run to allow real add/search operations.
+---
 
-## Discord requirements
+## 🐳 Docker quick start
 
-The Discord bot needs only the permissions required for the configured request channels:
+### 1. Clone ArrRelay
 
-- View Channel
-- Read Message History
-- Send Messages if using channel replies
-- Message Content Intent enabled in the Discord Developer Portal
+```bash
+git clone https://github.com/kasundigital/ArrRelay.git
+cd ArrRelay
+```
 
-For a more private experience, choose **DM requester privately** in ArrRelay Settings.
+### 2. Create your environment file
 
-## Telegram security
+```bash
+cp .env.example .env
+nano .env
+```
 
-Telegram review actions are accepted only from the configured `TELEGRAM_ADMIN_CHAT_ID`. Other chats cannot approve or cancel ArrRelay requests.
+At minimum, change:
 
-## Dashboard
+```env
+APP_SECRET=replace-with-a-long-random-secret
+```
 
-The admin dashboard currently reports:
+### 3. Start ArrRelay
 
-- Total requests
-- Movie requests
-- Series requests
-- Requests requiring review
-- Successfully added requests
-- Failed requests
-- Radarr total movies
-- Radarr movies with files/downloaded
-- Sonarr total series
-- Sonarr downloaded episodes / total episodes
-- Discord listener status
-- Recent request activity
+```bash
+docker compose up -d --build
+```
 
-## Data
+### 4. Check the container
 
-ArrRelay uses SQLite by default:
+```bash
+docker ps
+docker logs -f arrrelay
+```
+
+### 5. Open the web interface
+
+```text
+http://YOUR-SERVER-IP:3032
+```
+
+---
+
+## ⚙️ First-run setup
+
+On the first visit, ArrRelay asks you to create the local administrator account.
+
+Then open **Settings** and configure:
+
+1. 💬 **Discord**
+   - Bot token
+   - Guild / Server ID
+   - Request channel IDs
+   - Missing-information response mode
+
+2. 📲 **Telegram**
+   - Bot token
+   - Private admin chat ID
+
+3. 🎬 **Radarr**
+   - URL
+   - API key
+   - Root folder
+   - Quality profile ID
+
+4. 📺 **Sonarr**
+   - URL
+   - API key
+   - Root folder
+   - Quality profile ID
+
+5. 🧪 **Automation**
+   - Auto-approve confidence
+   - Dry Run mode
+
+> **Recommended:** Keep **Dry Run enabled** until Discord, Telegram, Radarr and Sonarr are all confirmed working.
+
+---
+
+## 💬 Discord requirements
+
+Your Discord bot should have only the permissions it needs for the configured request channels:
+
+- 👁️ View Channel
+- 📚 Read Message History
+- ✉️ Send Messages — only if using channel replies
+- 📝 Message Content Intent enabled in the Discord Developer Portal
+
+For a quieter setup, choose:
+
+```text
+DM requester privately
+```
+
+in ArrRelay settings.
+
+> Discord does not support a normal channel message that is visible only to one regular user. Use DM mode when strict privacy is required.
+
+---
+
+## 🔐 Security
+
+ArrRelay is designed to keep administration private.
+
+### Recommended
+
+- 🔑 Never commit your `.env` file
+- 🔒 Never expose Discord / Telegram / Radarr / Sonarr API keys
+- 🧂 Change `APP_SECRET` before deployment
+- 🌐 Use HTTPS behind a reverse proxy for internet access
+- 🏠 Keep the dashboard LAN/VPN-only where possible
+- 📲 Use only your private Telegram Chat ID for approval
+- 🧪 Start with `DRY_RUN=true`
+
+---
+
+## 🗃️ Persistent data
+
+ArrRelay stores application data in SQLite:
 
 ```text
 /data/arrrelay.db
 ```
 
-The Docker Compose file maps `./data:/data`, so configuration, admin login and request history survive container recreation.
+Docker Compose maps:
 
-## Security notes
+```text
+./data:/data
+```
 
-- Do not publish your `.env` file.
-- Do not commit Discord, Telegram, Radarr or Sonarr API tokens.
-- Change `APP_SECRET` before exposing the web interface.
-- Use a reverse proxy with HTTPS if accessing ArrRelay over the internet.
-- Keep the admin dashboard private where possible.
-- Start with `DRY_RUN=true`.
+This preserves:
 
-## Support this free project
+- Admin account
+- Integration settings
+- Request history
+- Request statuses
+- Dashboard statistics
 
-ArrRelay is free and open source. If it saves you time or you would like to support continued development, you can buy me a coffee:
+across container recreation.
 
-[☕ Buy Me a Coffee — Kasun Digital](https://buymeacoffee.com/kasundigital)
+---
 
-A support button is also included in the ArrRelay admin interface.
+## 📁 Project structure
 
-## Author
+```text
+ArrRelay/
+├── app/
+│   ├── main.py
+│   ├── web.py
+│   ├── runtime.py
+│   ├── discord_bot.py
+│   ├── telegram_bot.py
+│   ├── service.py
+│   ├── parser.py
+│   ├── arr_client.py
+│   ├── database.py
+│   ├── settings_store.py
+│   ├── models.py
+│   ├── config.py
+│   ├── templates/
+│   └── static/
+├── tests/
+├── data/
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+└── README.md
+```
+
+---
+
+## 🛣️ Roadmap
+
+- [x] Discord request listener
+- [x] Movie / Series / Year validation
+- [x] Radarr lookup and add
+- [x] Sonarr lookup and add
+- [x] Telegram review buttons
+- [x] Admin-only dashboard
+- [x] Browser-based settings
+- [x] Docker deployment
+- [x] Request statistics
+- [x] Buy Me a Coffee support link
+- [ ] Persist Telegram review candidates across container restarts
+- [ ] Better natural-language request parsing
+- [ ] Requester follow-up context
+- [ ] Playback/problem report detection
+- [ ] Additional dashboard charts
+- [ ] Release tags and upgrade instructions
+
+---
+
+## 🤝 Contributing
+
+Contributions, bug reports and feature requests are welcome.
+
+If you find a problem, open a GitHub issue with:
+
+- ArrRelay version / commit
+- Docker logs
+- Expected behavior
+- Actual behavior
+- Radarr / Sonarr version where relevant
+
+Please **never include API keys, bot tokens or passwords** in an issue.
+
+---
+
+## ☕ Support ArrRelay
+
+ArrRelay is **free and open source**.
+
+If ArrRelay saves you time or you would like to support continued development:
+
+### [☕ Buy Me a Coffee — Kasun Digital](https://buymeacoffee.com/kasundigital)
+
+The same support option is available from the ArrRelay admin interface.
+
+---
+
+## 👨‍💻 Author
 
 **Kasun Indika**  
 GitHub: [@kasundigital](https://github.com/kasundigital)
 
-## Status
+---
 
-ArrRelay is under active development. Test with Dry Run before enabling automatic downloads in a production Radarr/Sonarr library.
+<div align="center">
+
+### 🎬 ArrRelay
+
+**Discord → Radarr / Sonarr → Telegram**
+
+Built for self-hosters who want simple, controlled media request automation.
+
+⭐ If ArrRelay is useful to you, consider starring the repository.
+
+</div>
